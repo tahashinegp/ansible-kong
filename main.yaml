@@ -1,0 +1,13 @@
+- name: Install kong 2.0.5 on Ubuntu
+  hosts: kong
+  become: true
+  roles:
+    #- wine
+    #- phps
+    #- nginx
+    #- redis
+    #- common
+    #- memcached
+    #- nfs-server
+    #- icsi-initiator
+    - kong-gateway

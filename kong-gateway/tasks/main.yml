@@ -1,0 +1,90 @@
+---
+# tasks file for kong-gateway
+# roles/kong_installation/tasks/main.yml
+- name: Install dependencies
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - wget
+    - unzip
+    - libpcre3
+    - libpcre3-dev
+    - libssl-dev
+    - git
+- name: Update the Apt cache
+  apt:
+    update_cache: yes
+
+- name: Upgrade all packages
+  apt:
+    upgrade: dist
+    autoremove: yes
+    autoclean: yes
+
+- name: Download LuaRocks source
+  get_url:
+      url: https://luarocks.org/releases/luarocks-3.7.0.tar.gz
+      dest: /tmp/luarocks-3.7.0.tar.gz
+
+- name: Extract LuaRocks source
+  ansible.builtin.unarchive:
+      src: /tmp/luarocks-3.7.0.tar.gz
+      dest: /tmp/
+      remote_src: yes 
+
+- name: configure LuaRocks
+  shell: |
+    cd "/tmp/luarocks-3.0.0"
+    ./configure
+
+- name: Build and install LuaRocks
+  shell: |
+    cd "/tmp/luarocks-3.0.0"
+    make build && sudo make install
+  #ansible.builtin.command: 
+   # cmd: "make build && sudo make install"
+  #args:
+   #  chdir: "/tmp/luarocks-3.7.0"
+- name: Clone Kong repository
+  git:
+    repo: https://github.com/Kong/kong.git
+    dest: /opt/kong
+    version: "{{ version }}"
+- name: Build Kong
+  command: make dev
+  args:
+    chdir: /opt/kong
+
+- name: Install Kong
+  command: make install
+  args:
+    chdir: /opt/kong
+
+- name: Create Kong configuration directory
+  file:
+    path: /etc/kong
+    state: directory
+
+- name: Copy Kong configuration file
+  copy:
+    src: /opt/kong/kong.conf.default
+    dest: /etc/kong/kong.conf
+    mode: 0644
+  notify: Retart kong
+  register: result
+- name: Show result
+  debug:
+    msg: "{{ result }}"
+
+- name: Create Kong systemd service unit file
+  template:
+    src: kong.service.j2
+    dest: /etc/systemd/system/kong.service
+    mode: 0644
+
+- name: Enable and start Kong service
+  systemd:
+    name: kong
+    enabled: yes
+    state: started

@@ -1,0 +1,11 @@
+---
+# handlers file for kong-gateway
+- name: Start Kong service
+  systemd:
+    name: kong
+    state: started
+
+- name: Restart Kong service
+  systemd:
+    name: kong
+    state: restarted

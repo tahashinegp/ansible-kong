@@ -1,0 +1,16 @@
+# roles/kong_installation/tasks/kong.service.j2
+
+[Unit]
+Description=Kong API Gateway
+After=network.target
+
+[Service]
+Type=simple
+User={{ kong_user }}
+ExecStart=/usr/local/bin/kong start
+ExecReload=/usr/local/bin/kong reload
+ExecStop=/usr/local/bin/kong stop
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
